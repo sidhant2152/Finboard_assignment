@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import { Download, Upload } from "lucide-react";
 import AddWidgetAction from "../addWidget/AddWidgetAction";
+import { PresetDropdown } from "../addWidget/PresetDropdown";
 import { Button } from "../ui/button";
 import { ModeToggle } from "../ui/theme-toggle";
 import { useAppSelector, useAppDispatch } from "@/hooks";
@@ -41,40 +42,45 @@ export const Navbar = () => {
   };
 
   return (
-    <div className="px-4 py-6 border-b border-gray-500">
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold">FinBoard</h1>
-        <div className="flex items-center gap-2">
-          <ModeToggle />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            disabled={widgets.length === 0}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleImportClick}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Import
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleImport}
-            className="hidden"
-          />
-          <AddWidgetAction />
+    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-card/80 backdrop-blur-md supports-backdrop-filter:bg-card/60 shadow-md">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            FinBoard
+          </h1>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ModeToggle />
+            <PresetDropdown />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={widgets.length === 0}
+              className="flex items-center gap-2 border-border/50 hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleImportClick}
+              className="flex items-center gap-2 border-border/50 hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Import</span>
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+            <AddWidgetAction />
+          </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
