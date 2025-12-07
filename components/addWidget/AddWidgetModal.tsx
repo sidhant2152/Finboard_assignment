@@ -55,6 +55,7 @@ export function AddWidgetModal({
     error: apiError,
     isLoading: isTesting,
     refresh,
+    reset,
   } = useFetchCardData(
     apiUrl ? apiUrl : undefined,
     apiUrl ? testOptions : undefined
@@ -264,6 +265,7 @@ export function AddWidgetModal({
     setXFieldPath("");
     setChartType("line");
     onOpenChange(false);
+    reset();
   };
 
   return (

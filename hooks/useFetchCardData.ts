@@ -41,6 +41,16 @@ export function useFetchCardData(
     }
   }, [url, options]);
 
+  const reset = useCallback(() => {
+    setData(null);
+    setError(null);
+    setIsLoading(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (!url) return;
     cancelledRef.current = false;
@@ -62,6 +72,7 @@ export function useFetchCardData(
     error,
     isLoading,
     refresh: run,
+    reset,
   };
 }
 

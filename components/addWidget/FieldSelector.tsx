@@ -203,10 +203,10 @@ export function FieldSelector({
             : widgetType === "table"
             ? arrayPath
               ? "Select Columns (from first array item)"
-              : "Select Array Path"
+              : "Select Array Path (Arrays inside this will be used to display as columns)"
             : chartArrayPath
             ? "Select Y-Axis Fields (from first entry)"
-            : "Select Object Path"}
+            : "Select Object Path (This will be used to display as X-axis)"}
         </h3>
         <div className="border rounded-md max-h-60 overflow-y-auto">
           {filteredFields.length === 0 ? (
