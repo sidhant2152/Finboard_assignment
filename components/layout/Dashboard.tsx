@@ -1,144 +1,37 @@
 "use client";
-import { useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import GridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import type { Widget } from "@/types/widget.types";
-import { PropsWithChildren } from "react";
+import { WidgetWrapper } from "../widgets/WidgetWrapper";
+import { useAppSelector, useAppDispatch } from "@/hooks";
+import { loadWidgets, updateWidget } from "@/slices/widgetSlice";
 
 const COLS = 12;
 const ROW_HEIGHT = 80;
 
-const widgets: Widget[] = [
-  {
-    id: "1",
-    title: "Widget 1",
-    type: "card",
-    lastUpdated: new Date(),
-    position: { x: 0, y: 0, width: 4, height: 4 },
-    fieldMapping: [
-      {
-        sourcePath: "Realtime Currency Exchange Rate.5. Exchange Rate",
-        displayLabel: "Exchange Rate",
-        format: "number",
-      },
-      {
-        sourcePath: "Realtime Currency Exchange Rate.6. Last Refreshed",
-        displayLabel: "Updated At",
-        format: "text",
-      },
-    ],
-    apiConfig: {
-      url: "https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=JPY&apikey=demo",
-      headers: {},
-      refreshInterval: 0,
-    },
-  },
-  {
-    id: "widget-gainers-1",
-    title: "Top Gainers",
-    type: "table",
-    lastUpdated: new Date(),
-    position: { x: 0, y: 0, width: 6, height: 8 },
+export function DashboardGrid() {
+  const dispatch = useAppDispatch();
+  const { widgets } = useAppSelector((state) => state.widget);
 
-    // card-specific fieldMapping (not used in tables but required by your type)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("widget-config");
+      if (stored) {
+        const config = JSON.parse(stored);
+        dispatch(
+          loadWidgets({
+            widgets: config.widgets || [],
+            totalWidgets: config.totalWidgets || 0,
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load widgets from localStorage:", error);
+    }
+  }, [dispatch]);
 
-    apiConfig: {
-      url: "https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=demo",
-      headers: {},
-      refreshInterval: 30000,
-    },
-
-    fieldMapping: {
-      arrayPath: "top_gainers",
-      columns: [
-        {
-          sourcePath: "ticker",
-          label: "Ticker",
-          format: "text",
-        },
-        {
-          sourcePath: "price",
-          label: "Price",
-          format: "number",
-        },
-        {
-          sourcePath: "change_percentage",
-          label: "Change %",
-          format: "percent",
-        },
-        {
-          sourcePath: "volume",
-          label: "Volume",
-          format: "number",
-        },
-      ],
-    },
-  },
-  {
-    id: "widget_line_1",
-    title: "IBM – Close vs High (Line Chart)",
-    type: "chart",
-    lastUpdated: new Date(),
-    position: { x: 0, y: 8, width: 6, height: 6 },
-
-    fieldMapping: {
-      arrayPath: "Time Series (5min)", // parent that contains timestamp → OHLCV
-      xField: "__key", // timestamp key is our X axis
-      chartType: "line",
-
-      // Two lines: Close + High
-      yFields: [
-        {
-          sourcePath: "4. close",
-          displayLabel: "Close Price",
-          format: "number",
-        },
-        {
-          sourcePath: "2. high",
-          displayLabel: "High Price",
-          format: "number",
-        },
-      ],
-    },
-
-    apiConfig: {
-      url: "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=demo",
-      headers: {},
-      refreshInterval: 300000, // 5 min
-    },
-  },
-  {
-    id: "widget_candle_1",
-    title: "IBM – Intraday Candlestick",
-    type: "chart",
-    lastUpdated: new Date(),
-    position: { x: 6, y: 8, width: 6, height: 6 },
-
-    fieldMapping: {
-      arrayPath: "Time Series (5min)", // same parent object
-      xField: "__key", // timeline is the timestamp
-
-      chartType: "candlestick",
-
-      yFields: [
-        { sourcePath: "1. open", displayLabel: "Open", format: "number" },
-        { sourcePath: "2. high", displayLabel: "High", format: "number" },
-        { sourcePath: "3. low", displayLabel: "Low", format: "number" },
-        { sourcePath: "4. close", displayLabel: "Close", format: "number" },
-        { sourcePath: "5. volume", displayLabel: "Volume", format: "number" },
-      ],
-    },
-
-    apiConfig: {
-      url: "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=demo",
-      headers: {},
-      refreshInterval: 300000,
-    },
-  },
-];
-
-export function DashboardGrid({ children }: PropsWithChildren) {
   const layout = widgets.map((widget) => ({
     i: widget.id,
     x: widget.position.x,
@@ -149,28 +42,32 @@ export function DashboardGrid({ children }: PropsWithChildren) {
     minH: 2,
   }));
 
-  // const handleLayoutChange = useCallback(
-  //   (newLayout: GridLayout.Layout[]) => {
-  //     newLayout.forEach((item) => {
-  //       const widget = widgets.find((w) => w.id === item.i);
-  //       if (
-  //         widget &&
-  //         (widget.position.x !== item.x ||
-  //           widget.position.y !== item.y ||
-  //           widget.position.width !== item.w ||
-  //           widget.position.height !== item.h)
-  //       ) {
-  //       //   updateWidgetPosition(item.i, {
-  //       //     x: item.x,
-  //       //     y: item.y,
-  //       //     w: item.w,
-  //       //     h: item.h,
-  //       //   });
-  //       }
-  //     });
-  //   },
-  //   [widgets, updateWidgetPosition]
-  // );
+  const handleLayoutChange = (newLayout: GridLayout.Layout[]) => {
+    newLayout.forEach((item) => {
+      const widget = widgets.find((w) => w.id === item.i);
+      if (
+        widget &&
+        (widget.position.x !== item.x ||
+          widget.position.y !== item.y ||
+          widget.position.width !== item.w ||
+          widget.position.height !== item.h)
+      ) {
+        dispatch(
+          updateWidget({
+            id: item.i,
+            updates: {
+              position: {
+                x: item.x,
+                y: item.y,
+                width: item.w,
+                height: item.h,
+              },
+            },
+          })
+        );
+      }
+    });
+  };
 
   if (widgets.length === 0) {
     return (
@@ -208,8 +105,8 @@ export function DashboardGrid({ children }: PropsWithChildren) {
       layout={layout}
       cols={COLS}
       rowHeight={ROW_HEIGHT}
-      width={1200}
-      onLayoutChange={() => {}}
+      width={1800}
+      onLayoutChange={handleLayoutChange}
       draggableHandle=".drag-handle"
       isResizable={true}
       isDraggable={true}
@@ -217,7 +114,11 @@ export function DashboardGrid({ children }: PropsWithChildren) {
       preventCollision={false}
       margin={[16, 16]}
     >
-      {children}
+      {widgets.map((widget: Widget) => (
+        <div key={widget.id} className="widget-grid-item">
+          <WidgetWrapper widget={widget} />
+        </div>
+      ))}
     </GridLayout>
   );
 }
