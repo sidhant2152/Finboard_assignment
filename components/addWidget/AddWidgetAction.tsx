@@ -12,8 +12,14 @@ const AddWidgetAction = () => {
 
   return (
     <>
-      <Button variant={"default"} onClick={handleOpenChange}>
-        Add Widget
+      <Button
+        variant={"default"}
+        onClick={handleOpenChange}
+        size="sm"
+        className="px-2 sm:px-4"
+      >
+        <span className="hidden sm:inline">Add Widget</span>
+        <span className="sm:hidden">Add</span>
       </Button>
       <AddWidgetModal open={isOpen} onOpenChange={handleOpenChange} />
     </>

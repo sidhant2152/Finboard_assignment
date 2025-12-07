@@ -268,7 +268,7 @@ export function AddWidgetModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-[calc(100%-1rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Widget" : "Add New Widget"}
@@ -291,7 +291,7 @@ export function AddWidgetModal({
 
             <div className="space-y-2">
               <Label htmlFor="api-url">API URL</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="api-url"
                   type="url"
@@ -303,7 +303,7 @@ export function AddWidgetModal({
                 <Button
                   onClick={handleTestApi}
                   disabled={isTesting || !apiUrl.trim()}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white sm:w-auto w-full"
                 >
                   {isTesting ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -360,7 +360,7 @@ export function AddWidgetModal({
                   onValueChange={(value) =>
                     handleWidgetTypeChange(value as WidgetType)
                   }
-                  className="flex gap-2"
+                  className="flex flex-wrap gap-2"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem
@@ -426,7 +426,7 @@ export function AddWidgetModal({
                       onValueChange={(value) =>
                         setChartType(value as "line" | "candlestick")
                       }
-                      className="flex gap-2"
+                      className="flex flex-wrap gap-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="line" id="line" />
