@@ -3,10 +3,11 @@ import { useEffect, useCallback } from "react";
 import GridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import type { Widget } from "@/types/widget.types";
+import type { Widget, WidgetConfig } from "@/types/widget.types";
 import { WidgetWrapper } from "../widgets/WidgetWrapper";
 import { useAppSelector, useAppDispatch } from "@/hooks";
 import { loadWidgets, updateWidget } from "@/slices/widgetSlice";
+import { getLocalStorageItem, WIDGET_CONFIG_KEY } from "@/lib/utils";
 
 const COLS = 12;
 const ROW_HEIGHT = 80;
@@ -16,19 +17,14 @@ export function DashboardGrid() {
   const { widgets } = useAppSelector((state) => state.widget);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("widget-config");
-      if (stored) {
-        const config = JSON.parse(stored);
-        dispatch(
-          loadWidgets({
-            widgets: config.widgets || [],
-            totalWidgets: config.totalWidgets || 0,
-          })
-        );
-      }
-    } catch (error) {
-      console.error("Failed to load widgets from localStorage:", error);
+    const config = getLocalStorageItem<WidgetConfig>(WIDGET_CONFIG_KEY);
+    if (config) {
+      dispatch(
+        loadWidgets({
+          widgets: config.widgets || [],
+          totalWidgets: config.totalWidgets || 0,
+        })
+      );
     }
   }, [dispatch]);
 

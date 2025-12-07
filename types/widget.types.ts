@@ -1,5 +1,6 @@
 export type WidgetType = "card" | "table" | "chart";
 export type DataFormat = "currency" | "percent" | "number" | "text";
+export type ChartType = "line" | "candlestick";
 
 export interface Widget {
   id: string;
@@ -32,7 +33,7 @@ export interface FieldMapping {
 export interface MappedColumn {
   key: string;
   label: string;
-  format?: DataFormat;
+  format: DataFormat;
 }
 
 export interface MappedRow {
@@ -44,31 +45,22 @@ export interface MappedTableData {
   columns: MappedColumn[];
   rows: MappedRow[];
   total: number;
-  lastUpdated?: string;
-}
-
-export interface ColumnConfig {
-  sourcePath: string;
-  label: string;
-  format?: DataFormat;
-  key?: string;
 }
 
 export interface TableFieldMapping {
   arrayPath: string;
-  columns: ColumnConfig[];
+  columns: FieldMapping[];
 }
 
-export interface ChartYField {
-  sourcePath: string; // Flattened key for Y axis
-  displayLabel: string;
-  format?: DataFormat;
+export interface WidgetConfig {
+  totalWidgets: number;
+  widgets: any[];
 }
 
 export interface ChartFieldMapping {
-  arrayPath: string; // Path for x axis
-  yFields: ChartYField[];
-  chartType: "line" | "candlestick";
+  xFieldPath: string; // Path for x axis
+  yFields: FieldMapping[];
+  chartType: ChartType;
 }
 
 export interface FlattenedField {
