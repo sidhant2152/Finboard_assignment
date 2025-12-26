@@ -1,5 +1,5 @@
 import React from "react";
-import type { Widget } from "@/types/widget.types";
+import type { FieldMapping, Widget } from "@/types/widget.types";
 import { mapData } from "@/lib/mappers";
 
 interface WidgetCardProps {
@@ -13,7 +13,7 @@ const WidgetCard = async ({ widget }: WidgetCardProps) => {
   });
 
   const data = await response.json();
-  const mapped = mapData(data, widget.fieldMapping);
+  const mapped = mapData(data, widget.fieldMapping as FieldMapping[]);
 
   return (
     <div>
