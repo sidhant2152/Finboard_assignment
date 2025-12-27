@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import GridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -15,6 +15,18 @@ const ROW_HEIGHT = 80;
 export function DashboardGrid() {
   const dispatch = useAppDispatch();
   const { widgets } = useAppSelector((state) => state.widget);
+  const [containerWidth, setContainerWidth] = useState(1200);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      const width = window.innerWidth;
+      setContainerWidth(Math.max(320, width - 32)); // Min 320px, subtract padding
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   useEffect(() => {
     const config = getLocalStorageItem<WidgetConfig>(WIDGET_CONFIG_KEY);
@@ -101,7 +113,7 @@ export function DashboardGrid() {
       layout={layout}
       cols={COLS}
       rowHeight={ROW_HEIGHT}
-      width={1800}
+      width={containerWidth}
       onLayoutChange={handleLayoutChange}
       draggableHandle=".drag-handle"
       isResizable={true}
