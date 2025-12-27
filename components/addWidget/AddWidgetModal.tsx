@@ -27,6 +27,7 @@ import type {
 } from "@/types/widget.types";
 import { FieldSelector } from "./FieldSelector";
 import { SelectedFieldsConfig } from "./SelectedFieldsConfig";
+import { toast } from "sonner";
 
 interface AddWidgetModalProps {
   open: boolean;
@@ -333,10 +334,14 @@ export function AddWidgetModal({
                 id="refresh-interval"
                 type="number"
                 value={refreshInterval}
-                onChange={(e) =>
-                  setRefreshInterval(Number(e.target.value) || 0)
-                }
-                min="0"
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (value >= 1) {
+                    setRefreshInterval(value);
+                  } else {
+                    toast.warning("Interval cannot be less than 1");
+                  }
+                }}
                 placeholder="30"
               />
             </div>
