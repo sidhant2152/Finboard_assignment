@@ -9,11 +9,11 @@ import type {
   ChartFieldMapping,
 } from "@/types/widget.types";
 
-function flatten(raw: any) {
+export const flatten = (raw: any) => {
   return flatFlatten(raw, { safe: true }) as Record<string, any>;
-}
+};
 
-export function formatValue(format: DataFormat, rawValue: any): string {
+export const formatValue = (format: DataFormat, rawValue: any): string => {
   if (rawValue == null) return "-";
 
   const num =
@@ -40,9 +40,9 @@ export function formatValue(format: DataFormat, rawValue: any): string {
     default:
       return String(rawValue);
   }
-}
+};
 
-export function mapData(rawApiData: any, fieldMapping: FieldMapping[]) {
+export const mapData = (rawApiData: any, fieldMapping: FieldMapping[]) => {
   const flattened = flatten(rawApiData);
 
   return fieldMapping.map((mapping) => {
@@ -55,20 +55,21 @@ export function mapData(rawApiData: any, fieldMapping: FieldMapping[]) {
       formattedValue: formatValue(mapping.format, rawValue),
     };
   });
-}
+};
 
-function getAtPath(obj: any, path: string) {
+export const getAtPath = (obj: any, path: string): any => {
+  if (!path) return obj;
   return path.split(".").reduce((acc, key) => {
     if (acc == null) return undefined;
     const idx = Number(key);
     return Array.isArray(acc) && !isNaN(idx) ? acc[idx] : acc[key];
   }, obj);
-}
+};
 
-export function mapTableData(
+export const mapTableData = (
   rawApi: any,
   mapping: TableFieldMapping
-): MappedTableData {
+): MappedTableData => {
   const arr = getAtPath(rawApi, mapping.arrayPath) ?? [];
 
   // Build columns
@@ -106,19 +107,19 @@ export function mapTableData(
     total: rows.length,
     lastUpdated: rawApi.last_updated ?? rawApi.lastUpdated,
   };
-}
+};
 
-function toNumber(raw: any): number | null {
+export const toNumber = (raw: any): number | null => {
   if (raw == null) return null;
   const cleaned = String(raw).replace(/,/g, "").replace(/%/g, "");
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
-}
+};
 
-export function mapChartDataForLightweight(
+export const mapChartDataForLightweight = (
   rawApi: any,
   mapping: ChartFieldMapping
-) {
+) => {
   const rawObj = getAtPath(rawApi, mapping.arrayPath);
 
   if (!rawObj || typeof rawObj !== "object") {
@@ -137,9 +138,7 @@ export function mapChartDataForLightweight(
   // Sort by timestamp
   rows.sort((a, b) => (a.__key < b.__key ? -1 : 1));
 
-  const timeValues = rows.map((r) =>
-    mapping.xField === "__key" ? r.__key : r[mapping.xField] ?? r.__key
-  );
+  const timeValues = rows.map((r) => r.__key);
 
   // ----------------------
   // LINE CHART
@@ -199,4 +198,4 @@ export function mapChartDataForLightweight(
   }
 
   return { series: [] };
-}
+};
