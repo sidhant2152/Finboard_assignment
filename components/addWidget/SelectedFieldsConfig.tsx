@@ -3,7 +3,6 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,102 @@ import type {
   DataFormat,
 } from "@/types/widget.types";
 
+interface FieldItemProps {
+  field: FieldMapping;
+  layout?: "vertical" | "horizontal";
+  showFormat?: boolean;
+  placeholder?: string;
+  onUpdate: (updates: Partial<FieldMapping>) => void;
+  onRemove: () => void;
+}
+
+function FieldItem({
+  field,
+  layout = "horizontal",
+  showFormat = true,
+  placeholder = "Display Label",
+  onUpdate,
+  onRemove,
+}: FieldItemProps) {
+  const isVertical = layout === "vertical";
+
+  return (
+    <div
+      className={`group relative ${
+        isVertical
+          ? "flex flex-col gap-3 p-3 border border-border/50 rounded-lg bg-card/50 hover:bg-card/80 transition-all shadow-sm"
+          : "flex items-start gap-3 p-3 border border-border/50 rounded-lg bg-card/50 hover:bg-card/80 transition-all shadow-sm"
+      }`}
+    >
+      {isVertical && (
+        <div className="flex items-center justify-between pb-2 border-b border-border/30">
+          <div className="text-xs font-mono text-muted-foreground/80 truncate max-w-[80%]">
+            {field.sourcePath}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      <div
+        className={
+          isVertical ? "w-full space-y-2.5" : "flex-1 space-y-2 min-w-0"
+        }
+      >
+        <div className="space-y-1.5">
+          <Input
+            type="text"
+            value={field.displayLabel}
+            onChange={(e) => onUpdate({ displayLabel: e.target.value })}
+            className="h-9 text-sm border-border/50 focus:border-primary/50 transition-colors"
+            placeholder={placeholder}
+          />
+          {!isVertical && (
+            <div className="text-xs font-mono text-muted-foreground/70 truncate px-1">
+              {field.sourcePath}
+            </div>
+          )}
+        </div>
+        {showFormat && (
+          <Select
+            value={field.format}
+            onValueChange={(value) => onUpdate({ format: value as DataFormat })}
+          >
+            <SelectTrigger className="h-9 text-xs border-border/50 focus:border-primary/50 transition-colors">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="percent">Percent</SelectItem>
+              <SelectItem value="currency">Currency</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {!isVertical && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRemove}
+          className="h-8 w-8 mt-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 interface SelectedFieldsConfigProps {
   widgetType: WidgetType;
   selectedFields: FieldMapping[];
@@ -26,18 +121,8 @@ interface SelectedFieldsConfigProps {
   ) => void;
   onRemoveField: (index: number) => void;
   arrayPath: string;
-  selectedColumns: Array<{
-    sourcePath: string;
-    label: string;
-    format: DataFormat;
-  }>;
   onClearArrayPath: () => void;
   chartArrayPath: string;
-  selectedYFields: Array<{
-    sourcePath: string;
-    displayLabel: string;
-    format?: DataFormat;
-  }>;
   onClearChartArrayPath: () => void;
 }
 
@@ -47,10 +132,8 @@ export function SelectedFieldsConfig({
   onUpdateField,
   onRemoveField,
   arrayPath,
-  selectedColumns,
   onClearArrayPath,
   chartArrayPath,
-  selectedYFields,
   onClearChartArrayPath,
 }: SelectedFieldsConfigProps) {
   return (
@@ -65,53 +148,14 @@ export function SelectedFieldsConfig({
             </p>
           ) : (
             selectedFields.map((field, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-2 p-2 border rounded-md bg-secondary/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-mono text-muted-foreground truncate">
-                    {field.sourcePath}
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => onRemoveField(idx)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <Input
-                  type="text"
-                  value={field.displayLabel}
-                  onChange={(e) =>
-                    onUpdateField(idx, { displayLabel: e.target.value })
-                  }
-                  className="h-8 text-sm"
-                  placeholder="Display Label"
-                />
-
-                <Select
-                  value={field.format}
-                  onValueChange={(value) =>
-                    onUpdateField(idx, { format: value as DataFormat })
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="percent">Percent</SelectItem>
-                    <SelectItem value="currency">Currency</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <FieldItem
+                key={field.sourcePath}
+                field={field}
+                layout="vertical"
+                showFormat={true}
+                onUpdate={(updates) => onUpdateField(idx, updates)}
+                onRemove={() => onRemoveField(idx)}
+              />
             ))
           )}
         </div>
@@ -144,60 +188,21 @@ export function SelectedFieldsConfig({
                 </div>
               </div>
               <div className="space-y-2">
-                {selectedColumns.length === 0 ? (
+                {selectedFields.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-2">
                     No columns selected
                   </p>
                 ) : (
-                  selectedColumns.map((col, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 p-2 border rounded-md bg-secondary/30"
-                    >
-                      <div className="flex-1 space-y-1">
-                        <Input
-                          type="text"
-                          value={col.label}
-                          onChange={(e) =>
-                            onUpdateField(idx, {
-                              label: e.target.value,
-                            })
-                          }
-                          className="h-8 text-sm"
-                          placeholder="Column Label"
-                        />
-                        <div className="text-xs font-mono text-muted-foreground">
-                          {col.sourcePath}
-                        </div>
-                        <Select
-                          value={col.format}
-                          onValueChange={(value) =>
-                            onUpdateField(idx, {
-                              format: value as DataFormat,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="text">Text</SelectItem>
-                            <SelectItem value="number">Number</SelectItem>
-                            <SelectItem value="percent">Percent</SelectItem>
-                            <SelectItem value="currency">Currency</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onRemoveField(idx)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  selectedFields.map((col, idx) => (
+                    <FieldItem
+                      key={col.sourcePath}
+                      field={col}
+                      layout="horizontal"
+                      showFormat={true}
+                      placeholder="Column Label"
+                      onUpdate={(updates) => onUpdateField(idx, updates)}
+                      onRemove={() => onRemoveField(idx)}
+                    />
                   ))
                 )}
               </div>
@@ -233,42 +238,20 @@ export function SelectedFieldsConfig({
                 </div>
               </div>
               <div className="space-y-2">
-                {selectedYFields.length === 0 ? (
+                {selectedFields.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-2">
                     No Y fields selected
                   </p>
                 ) : (
-                  selectedYFields.map((field, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 p-2 border rounded-md bg-secondary/30"
-                    >
-                      <div className="flex-1 space-y-1">
-                        <Input
-                          type="text"
-                          value={field.displayLabel}
-                          onChange={(e) =>
-                            onUpdateField(idx, {
-                              displayLabel: e.target.value,
-                            })
-                          }
-                          className="h-8 text-sm"
-                          placeholder="Display Label"
-                        />
-                        <div className="text-xs font-mono text-muted-foreground">
-                          {field.sourcePath}
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onRemoveField(idx)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  selectedFields.map((field, idx) => (
+                    <FieldItem
+                      key={field.sourcePath}
+                      field={field}
+                      layout="horizontal"
+                      showFormat={false}
+                      onUpdate={(updates) => onUpdateField(idx, updates)}
+                      onRemove={() => onRemoveField(idx)}
+                    />
                   ))
                 )}
               </div>

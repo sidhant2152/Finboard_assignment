@@ -1,6 +1,30 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+export const WIDGET_CONFIG_KEY = "widget-config";
+
+export function getLocalStorageItem<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  } catch (error) {
+    console.error(`Failed to get item from localStorage (${key}):`, error);
+    return null;
+  }
+}
+
+export function setLocalStorageItem<T>(key: string, value: T): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to set item in localStorage (${key}):`, error);
+  }
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

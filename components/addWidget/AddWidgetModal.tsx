@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useFetchCardData } from "@/hooks/useFetchCardData";
 import { useAppDispatch } from "@/hooks";
 import { addWidget, updateWidget } from "@/slices/widgetSlice";
-import type { Widget } from "@/types/widget.types";
+import type { ChartType, Widget } from "@/types/widget.types";
 import {
   Dialog,
   DialogContent,
@@ -65,21 +65,14 @@ export function AddWidgetModal({
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Card Widget State
   const [selectedFields, setSelectedFields] = useState<FieldMapping[]>([]);
 
   // Table Widget State
   const [arrayPath, setArrayPath] = useState("");
-  const [selectedColumns, setSelectedColumns] = useState<
-    Array<{ sourcePath: string; label: string; format: DataFormat }>
-  >([]);
 
   // Chart Widget State
-  const [chartArrayPath, setChartArrayPath] = useState("");
-  const [chartType, setChartType] = useState<"line" | "candlestick">("line");
-  const [selectedYFields, setSelectedYFields] = useState<
-    Array<{ sourcePath: string; displayLabel: string; format?: DataFormat }>
-  >([]);
+  const [xFieldPath, setXFieldPath] = useState("");
+  const [chartType, setChartType] = useState<ChartType>("line");
 
   // load existin data
   useEffect(() => {
@@ -98,33 +91,24 @@ export function AddWidgetModal({
       ) {
         const tableMapping = widget.fieldMapping as TableFieldMapping;
         setArrayPath(tableMapping.arrayPath);
-        setSelectedColumns(
-          tableMapping.columns.map((col) => ({
-            sourcePath: col.sourcePath,
-            label: col.label,
-            format: col.format || "text",
-          }))
-        );
+        setSelectedFields(tableMapping.columns);
       } else if (
         widget.type === "chart" &&
-        "arrayPath" in widget.fieldMapping
+        "xFieldPath" in widget.fieldMapping
       ) {
         const chartMapping = widget.fieldMapping as ChartFieldMapping;
-        setChartArrayPath(chartMapping.arrayPath);
+        setXFieldPath(chartMapping.xFieldPath);
         setChartType(chartMapping.chartType);
-        setSelectedYFields(chartMapping.yFields);
+        setSelectedFields(chartMapping.yFields);
       }
     }
   }, [widget, open]);
 
   const handleWidgetTypeChange = (newType: WidgetType) => {
     setWidgetType(newType);
-    // Clear selections when type changes
     setSelectedFields([]);
     setArrayPath("");
-    setSelectedColumns([]);
-    setChartArrayPath("");
-    setSelectedYFields([]);
+    setXFieldPath("");
   };
 
   // Test API connection
@@ -136,84 +120,51 @@ export function AddWidgetModal({
   };
 
   const handleAddField = (field: FlattenedField) => {
+    const newField: FieldMapping = {
+      sourcePath: field.path,
+      displayLabel: field.path.split(".").pop() || field.path,
+      format: field.type === "number" ? "number" : "text",
+    };
+
     if (widgetType === "card") {
       if (selectedFields.some((f) => f.sourcePath === field.path)) return;
-
-      const newField: FieldMapping = {
-        sourcePath: field.path,
-        displayLabel: field.path.split(".").pop() || field.path,
-        format: field.type === "number" ? "number" : "text",
-      };
       setSelectedFields([...selectedFields, newField]);
     } else if (widgetType === "table") {
       // case 1 -> select array for table
       if (!arrayPath && field.isArray) {
         setArrayPath(field.path);
-        setSelectedColumns([]);
+        setSelectedFields([]);
       } else if (arrayPath) {
         // case 2 -> Select columns from array
-        if (selectedColumns.some((c) => c.sourcePath === field.path)) return;
-
-        const newColumn = {
-          sourcePath: field.path,
-          label: field.path.split(".").pop() || field.path,
-          format: (field.type === "number" ? "number" : "text") as DataFormat,
-        };
-        setSelectedColumns([...selectedColumns, newColumn]);
+        if (selectedFields.some((c) => c.sourcePath === field.path)) return;
+        setSelectedFields([...selectedFields, newField]);
       }
     } else if (widgetType === "chart") {
       // case 1 -> Select object for X-axis
-      if (!chartArrayPath && field.type === "object") {
-        setChartArrayPath(field.path);
-        setSelectedYFields([]);
-      } else if (chartArrayPath) {
+      if (!xFieldPath && field.type === "object") {
+        setXFieldPath(field.path);
+        setSelectedFields([]);
+      } else if (xFieldPath) {
         // case 2 -> select Y axis fields
-        if (selectedYFields.some((f) => f.sourcePath === field.path)) return;
-
-        const newYField = {
-          sourcePath: field.path,
-          displayLabel: field.path.split(".").pop() || field.path,
-          format:
-            field.type === "number" ? ("number" as DataFormat) : undefined,
-        };
-        setSelectedYFields([...selectedYFields, newYField]);
+        if (selectedFields.some((f) => f.sourcePath === field.path)) return;
+        setSelectedFields([...selectedFields, newField]);
       }
     }
   };
 
   const handleRemoveField = (index: number) => {
-    if (widgetType === "card") {
-      setSelectedFields(selectedFields.filter((_, i) => i !== index));
-    } else if (widgetType === "table") {
-      setSelectedColumns(selectedColumns.filter((_, i) => i !== index));
-    } else if (widgetType === "chart") {
-      setSelectedYFields(selectedYFields.filter((_, i) => i !== index));
-    }
+    setSelectedFields(selectedFields.filter((_, i) => i !== index));
   };
 
   const handleUpdateField = (
     index: number,
     updates: Partial<FieldMapping | { label: string; format: DataFormat }>
   ) => {
-    if (widgetType === "card") {
-      setSelectedFields(
-        selectedFields.map((field, i) =>
-          i === index ? { ...field, ...updates } : field
-        )
-      );
-    } else if (widgetType === "table") {
-      setSelectedColumns(
-        selectedColumns.map((col, i) =>
-          i === index ? { ...col, ...updates } : col
-        )
-      );
-    } else if (widgetType === "chart") {
-      setSelectedYFields(
-        selectedYFields.map((field, i) =>
-          i === index ? { ...field, ...updates } : field
-        )
-      );
-    }
+    setSelectedFields(
+      selectedFields.map((field, i) =>
+        i === index ? { ...field, ...updates } : field
+      )
+    );
   };
 
   // Validate form
@@ -225,9 +176,9 @@ export function AddWidgetModal({
     if (widgetType === "card") {
       return selectedFields.length > 0;
     } else if (widgetType === "table") {
-      return arrayPath !== "" && selectedColumns.length > 0;
+      return arrayPath !== "" && selectedFields.length > 0;
     } else if (widgetType === "chart") {
-      return chartArrayPath !== "" && selectedYFields.length > 0;
+      return xFieldPath !== "" && selectedFields.length > 0;
     }
 
     return false;
@@ -244,17 +195,13 @@ export function AddWidgetModal({
     } else if (widgetType === "table") {
       fieldMapping = {
         arrayPath: arrayPath,
-        columns: selectedColumns.map((col) => ({
-          sourcePath: col.sourcePath,
-          label: col.label,
-          format: col.format,
-        })),
+        columns: selectedFields,
       };
     } else {
       fieldMapping = {
-        arrayPath: chartArrayPath,
+        xFieldPath: xFieldPath,
         chartType,
-        yFields: selectedYFields,
+        yFields: selectedFields,
       };
     }
 
@@ -272,7 +219,6 @@ export function AddWidgetModal({
               headers: widget.apiConfig.headers,
               refreshInterval: refreshInterval * 1000,
             },
-            lastUpdated: new Date().toISOString(),
           },
         })
       );
@@ -298,7 +244,6 @@ export function AddWidgetModal({
           headers: {},
           refreshInterval: refreshInterval * 1000,
         },
-        lastUpdated: new Date().toISOString(),
       };
 
       dispatch(addWidget(newWidget));
@@ -315,10 +260,8 @@ export function AddWidgetModal({
     setSearchQuery("");
     setSelectedFields([]);
     setArrayPath("");
-    setSelectedColumns([]);
-    setChartArrayPath("");
+    setXFieldPath("");
     setChartType("line");
-    setSelectedYFields([]);
     onOpenChange(false);
   };
 
@@ -500,7 +443,7 @@ export function AddWidgetModal({
                       </div>
                     </RadioGroup>
                   </div>
-                  {!chartArrayPath && (
+                  {!xFieldPath && (
                     <p className="text-xs text-muted-foreground">
                       Select an object path from available fields to continue
                     </p>
@@ -513,10 +456,8 @@ export function AddWidgetModal({
                 apiResponse={apiResponse}
                 widgetType={widgetType}
                 arrayPath={arrayPath}
-                chartArrayPath={chartArrayPath}
+                chartArrayPath={xFieldPath}
                 selectedFields={selectedFields}
-                selectedColumns={selectedColumns}
-                selectedYFields={selectedYFields}
                 onAddField={handleAddField}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -529,11 +470,9 @@ export function AddWidgetModal({
                 onUpdateField={handleUpdateField}
                 onRemoveField={handleRemoveField}
                 arrayPath={arrayPath}
-                selectedColumns={selectedColumns}
                 onClearArrayPath={() => setArrayPath("")}
-                chartArrayPath={chartArrayPath}
-                selectedYFields={selectedYFields}
-                onClearChartArrayPath={() => setChartArrayPath("")}
+                chartArrayPath={xFieldPath}
+                onClearChartArrayPath={() => setXFieldPath("")}
               />
             </div>
           )}

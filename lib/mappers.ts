@@ -57,7 +57,7 @@ export const mapData = (rawApiData: any, fieldMapping: FieldMapping[]) => {
   });
 };
 
-export const getAtPath = (obj: any, path: string): any => {
+export const getValueAtPath = (obj: any, path: string): any => {
   if (!path) return obj;
   return path.split(".").reduce((acc, key) => {
     if (acc == null) return undefined;
@@ -70,28 +70,31 @@ export const mapTableData = (
   rawApi: any,
   mapping: TableFieldMapping
 ): MappedTableData => {
-  const arr = getAtPath(rawApi, mapping.arrayPath) ?? [];
+  const arr = getValueAtPath(rawApi, mapping.arrayPath) ?? [];
 
   // Build columns
   const columns: MappedColumn[] = mapping.columns.map((c) => ({
-    key: c.key ?? c.label.replace(/\s+/g, "_").toLowerCase(),
-    label: c.label,
+    key: c.sourcePath.replace(/\./g, "_").replace(/\s+/g, "_").toLowerCase(),
+    label: c.displayLabel,
     format: c.format,
   }));
 
   // Build rows
   const rows: MappedRow[] = (Array.isArray(arr) ? arr : []).map(
     (row: any, idx: number) => {
-      const flat = flatFlatten(row, { safe: true }) as Record<string, any>;
+      const flat = flatFlatten(row) as Record<string, any>;
       const out: MappedRow = {
         id: `row-${idx}`, // fallback ID
       };
 
       // For each column add a property with same key
       for (const col of mapping.columns) {
-        const key = col.key ?? col.label.replace(/\s+/g, "_").toLowerCase();
+        const key = col.sourcePath
+          .replace(/\./g, "_")
+          .replace(/\s+/g, "_")
+          .toLowerCase();
 
-        let rawVal = getAtPath(row, col.sourcePath);
+        let rawVal = getValueAtPath(row, col.sourcePath);
         if (rawVal === undefined) rawVal = flat[col.sourcePath];
 
         out[key] = rawVal == null ? "-" : String(rawVal);
@@ -105,7 +108,6 @@ export const mapTableData = (
     columns,
     rows,
     total: rows.length,
-    lastUpdated: rawApi.last_updated ?? rawApi.lastUpdated,
   };
 };
 
@@ -120,18 +122,15 @@ export const mapChartDataForLightweight = (
   rawApi: any,
   mapping: ChartFieldMapping
 ) => {
-  const rawObj = getAtPath(rawApi, mapping.arrayPath);
+  const rawObj = getValueAtPath(rawApi, mapping.xFieldPath);
 
   if (!rawObj || typeof rawObj !== "object") {
     return { series: [], lastUpdated: undefined };
   }
 
   // Flatten rows
-  const rows: FlatRow[] = Object.keys(rawObj).map((key) => {
-    const flat = flatFlatten(rawObj[key] ?? {}, { safe: true }) as Record<
-      string,
-      any
-    >;
+  const rows: any[] = Object.keys(rawObj).map((key) => {
+    const flat = flatten(rawObj[key]);
     return { __key: key, ...flat };
   });
 
@@ -140,9 +139,7 @@ export const mapChartDataForLightweight = (
 
   const timeValues = rows.map((r) => r.__key);
 
-  // ----------------------
-  // LINE CHART
-  // ----------------------
+  // Restructure data into required format for line chart
   if (mapping.chartType === "line") {
     const series = mapping.yFields.map((field) => ({
       type: "line" as const,
@@ -156,9 +153,7 @@ export const mapChartDataForLightweight = (
     return { series };
   }
 
-  // ----------------------
-  // CANDLE CHART
-  // ----------------------
+  // Restructure data into required format for candlestick chart
   if (mapping.chartType === "candlestick") {
     const find = (label: string) =>
       mapping.yFields.find((f) => f.displayLabel.toLowerCase().includes(label))

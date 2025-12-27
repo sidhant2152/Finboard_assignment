@@ -7,7 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import type { MappedTableData, DataFormat } from "@/types/widget.types";
+import type { MappedTableData } from "@/types/widget.types";
 import { cn } from "@/lib/utils";
 import { formatValue } from "@/lib/mappers";
 
@@ -139,7 +139,7 @@ export default function TableClient({ data }: TableClientProps) {
               >
                 {data.columns.map((column) => {
                   const value = row[column.key];
-                  const formatted = formatValue(column.format!, value);
+                  const formatted = formatValue(column.format || "text", value);
                   const isNumeric =
                     column.format === "currency" ||
                     column.format === "number" ||

@@ -12,7 +12,7 @@ import type {
   DataFormat,
   FlattenedField,
 } from "@/types/widget.types";
-import { getAtPath } from "@/lib/mappers";
+import { getValueAtPath } from "@/lib/mappers";
 
 interface FieldSelectorProps {
   apiResponse: any;
@@ -20,16 +20,6 @@ interface FieldSelectorProps {
   arrayPath: string;
   chartArrayPath: string;
   selectedFields: FieldMapping[];
-  selectedColumns: Array<{
-    sourcePath: string;
-    label: string;
-    format: DataFormat;
-  }>;
-  selectedYFields: Array<{
-    sourcePath: string;
-    displayLabel: string;
-    format?: DataFormat;
-  }>;
   onAddField: (field: FlattenedField) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -41,8 +31,6 @@ export function FieldSelector({
   arrayPath,
   chartArrayPath,
   selectedFields,
-  selectedColumns,
-  selectedYFields,
   onAddField,
   searchQuery,
   onSearchChange,
@@ -84,7 +72,7 @@ export function FieldSelector({
     // Once user select array for table
     // then we will show all the fields inside the array to display as column
     if (widgetType === "table" && arrayPath) {
-      const arrayData = getAtPath(apiResponse, arrayPath);
+      const arrayData = getValueAtPath(apiResponse, arrayPath);
       if (!Array.isArray(arrayData) || arrayData.length === 0) return [];
 
       const firstItem = arrayData[0];
@@ -132,7 +120,7 @@ export function FieldSelector({
     // Once user has selected object
     // then we will give option to select other fields for Y axis
     if (widgetType === "chart" && chartArrayPath) {
-      const chartData = getAtPath(apiResponse, chartArrayPath);
+      const chartData = getValueAtPath(apiResponse, chartArrayPath);
       if (
         !chartData ||
         typeof chartData !== "object" ||
@@ -180,21 +168,14 @@ export function FieldSelector({
       selectedFields.forEach((f) => paths.add(f.sourcePath));
     } else if (widgetType === "table") {
       if (arrayPath) paths.add(arrayPath);
-      selectedColumns.forEach((c) => paths.add(c.sourcePath));
+      selectedFields.forEach((c) => paths.add(c.sourcePath));
     } else if (widgetType === "chart") {
       if (chartArrayPath) paths.add(chartArrayPath);
-      selectedYFields.forEach((f) => paths.add(f.sourcePath));
+      selectedFields.forEach((f) => paths.add(f.sourcePath));
     }
 
     return paths;
-  }, [
-    widgetType,
-    selectedFields,
-    arrayPath,
-    selectedColumns,
-    chartArrayPath,
-    selectedYFields,
-  ]);
+  }, [widgetType, selectedFields, arrayPath, chartArrayPath]);
 
   return (
     <div className="space-y-4">
